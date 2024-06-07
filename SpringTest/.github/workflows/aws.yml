@@ -1,0 +1,60 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Change wrapper permissions
+        run: chmod +x ./gradlew
+
+      - name: Init gradle wrapper
+        run: gradle init
+
+      - name: Init gradle wrapper
+        run: gradle wrapper
+
+      - name: Change wrapper permissions
+        run: chmod +x ./gradlew
+
+      # Gradle Build
+      - name: Build with Gradle Clean
+        run: ./gradlew clean
+
+      # Gradle Build
+      - name: Build with Gradle Build
+        run: ./gradlew build -x test
+
+      #      # Gradle Test
+      #      - name: Test with Gradle
+      #        run: ./gradlew --info test
+
+      # DockerHub 로그인
+      - name: DockerHub Login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      # Docker 이미지 빌드
+      - name: Docker Image Build
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} .
+
+        # run: docker build -f DockerFile -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} .
+
+      # DockerHub Push
+      - name: DockerHub Push
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
